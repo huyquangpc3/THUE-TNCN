@@ -1,0 +1,530 @@
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- PRINT STYLES — only show report when printing            -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; color: black !important; }
+    .print-area { box-shadow: none !important; border: 1px solid #ccc !important; }
+  }
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950/30 to-slate-900">
+
+  <!-- ── TOPBAR ──────────────────────────────────────────────── -->
+  <header class="no-print sticky top-0 z-30 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/30">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+          </svg>
+        </div>
+        <span class="font-bold text-white text-sm sm:text-base">Thuế TNCN</span>
+        <span class="hidden sm:inline text-slate-500 text-sm">· Tính Thuế Thu Nhập Cá Nhân</span>
+      </div>
+
+      <!-- Right controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Saved Reports button -->
+        <button (click)="sidebarOpen = !sidebarOpen" class="relative btn-secondary text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span class="hidden sm:inline">Báo cáo đã lưu</span>
+          <span *ngIf="savedReports.length > 0"
+            class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+            {{ savedReports.length }}
+          </span>
+        </button>
+
+        <!-- User info + logout -->
+        <div class="flex items-center gap-2">
+          <div class="hidden sm:flex flex-col items-end">
+            <span class="text-xs text-slate-400">Đăng nhập với</span>
+            <span class="text-xs font-medium text-slate-200 truncate max-w-[180px]">{{ userEmail }}</span>
+          </div>
+          <button (click)="signOut()" class="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all" title="Đăng xuất">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── SAVED REPORTS SIDEBAR ───────────────────────────────── -->
+  <div *ngIf="sidebarOpen" class="no-print fixed inset-0 z-40 flex">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="sidebarOpen = false"></div>
+    <div class="relative ml-auto w-full max-w-sm bg-slate-800 border-l border-slate-700 h-full overflow-y-auto animate-slide-up flex flex-col">
+      <div class="sticky top-0 bg-slate-800 border-b border-slate-700 px-5 py-4 flex items-center justify-between">
+        <h2 class="font-bold text-white">Báo cáo đã lưu</h2>
+        <button (click)="sidebarOpen = false" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="flex-1 p-4 space-y-3">
+        <div *ngIf="reportsLoading" class="flex justify-center py-8">
+          <svg class="w-6 h-6 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+        </div>
+        <div *ngIf="!reportsLoading && savedReports.length === 0"
+          class="text-center py-12 text-slate-500">
+          <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-sm">Chưa có báo cáo nào</p>
+        </div>
+        <div *ngFor="let r of savedReports"
+          class="bg-slate-700/50 rounded-xl p-4 border border-slate-600/30 hover:border-blue-500/40 transition-all cursor-pointer group"
+          (click)="loadReport(r)">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="font-semibold text-white text-sm">Năm {{ r.year }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">{{ r.dependents }} người phụ thuộc</p>
+              <p class="text-blue-400 font-mono text-xs mt-2">Thuế: {{ fmt(r.tax_amount) }}</p>
+              <p class="text-slate-400 font-mono text-xs">TN: {{ fmt(r.total_income) }}</p>
+            </div>
+            <button (click)="$event.stopPropagation(); deleteReport(r.id!)"
+              class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ────────────────────────────────────────── -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+    <!-- ──── STEP INDICATORS ──── -->
+    <div class="no-print flex items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-10">
+      <div *ngFor="let s of ['imap','params','result']; let i = index"
+        class="flex items-center gap-2 sm:gap-4">
+        <div class="flex items-center gap-2">
+          <div [class]="'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ' +
+            (step === s ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/40' :
+             (step === 'params' && i === 0 || step === 'result' && i <= 1 ? 'bg-emerald-600/80 text-white' : 'bg-slate-700 text-slate-400'))">
+            <svg *ngIf="(step === 'params' && i === 0) || (step === 'result' && i <= 1)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span *ngIf="!((step === 'params' && i === 0) || (step === 'result' && i <= 1))">{{ i+1 }}</span>
+          </div>
+          <span class="hidden sm:inline text-xs font-medium" [class]="step === s ? 'text-blue-400' : 'text-slate-500'">
+            {{ s === 'imap' ? 'Đọc Email' : s === 'params' ? 'Thông Số' : 'Báo Cáo' }}
+          </span>
+        </div>
+        <div *ngIf="i < 2" class="w-8 sm:w-16 h-px bg-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- STEP 1: IMAP                                            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div *ngIf="step === 'imap'" class="animate-fade-in">
+      <div class="card p-6 sm:p-8">
+        <div class="flex items-start gap-4 mb-6">
+          <div class="w-12 h-12 bg-blue-600/15 rounded-xl flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-white">Đọc Phiếu Lương Từ Email</h2>
+            <p class="text-slate-400 text-sm mt-1">Ứng dụng sẽ tự động tìm các email lương từ <span class="text-blue-400 font-mono">phieuluong.cpcit&#64;gmail.com</span> trong năm đã chọn.</p>
+          </div>
+        </div>
+
+        <!-- IMAP notice -->
+        <div class="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-6">
+          <svg class="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-sm text-amber-300">
+            <p class="font-semibold mb-1">Bạn cần dùng Mật khẩu Ứng dụng (App Password)</p>
+            <p class="text-amber-400/80">Vào: <strong>Tài khoản Google → Bảo mật → Xác minh 2 bước → Mật khẩu ứng dụng</strong>. Chọn ứng dụng <em>Thư</em>, sao chép mã 16 ký tự và dùng bên dưới. Mật khẩu này sẽ <strong>không được lưu lại</strong>.</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="fetchEmails()" class="space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="label" for="gmail">Địa chỉ Gmail của bạn</label>
+              <input id="gmail" type="email" [(ngModel)]="gmailAddress" name="gmailAddress"
+                class="input-field" placeholder="ten.ban@gmail.com" required autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="label" for="year-imap">Năm tính thuế</label>
+              <input id="year-imap" type="number" [(ngModel)]="year" name="year"
+                class="input-field" placeholder="2024" min="2010" [max]="2026" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="label" for="apppass">Mật khẩu Ứng dụng (App Password)</label>
+            <input id="apppass" type="password" [(ngModel)]="appPassword" name="appPassword"
+              class="input-field font-mono tracking-widest" placeholder="xxxx xxxx xxxx xxxx" required autocomplete="off">
+            <p class="text-xs text-slate-500 mt-1">16 ký tự, ví dụ: abcd efgh ijkl mnop</p>
+          </div>
+
+          <div *ngIf="fetchError" class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-red-400 text-sm">{{ fetchError }}</p>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button type="submit" [disabled]="fetchLoading" class="btn-primary flex-1 sm:flex-none">
+              <svg *ngIf="fetchLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <svg *ngIf="!fetchLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              {{ fetchLoading ? 'Đang quét thư...' : 'Bắt đầu quét Email' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- STEP 2: PARAMS                                          -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div *ngIf="step === 'params'" class="animate-fade-in space-y-6">
+      <!-- Income card -->
+      <div class="card p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-emerald-600/15 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-white">Thu Nhập Đọc Từ Email</h3>
+            <p class="text-xs text-slate-400">Năm {{ year }} — từ phieuluong.cpcit&#64;gmail.com</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-700/30 rounded-xl p-5 border border-slate-600/30 mb-4">
+          <p class="text-sm text-slate-400 mb-1">Tìm thấy {{ emailCount }} email lương</p>
+          <p class="text-3xl font-bold text-emerald-400 font-mono">{{ fmt(totalIncome) }}</p>
+          <p *ngIf="totalIncome === 0 && emailCount > 0" class="text-amber-400 text-sm mt-2">
+            ⚠ Tìm thấy {{ emailCount }} email nhưng không đọc được số thu nhập. Kiểm tra lại định dạng email hoặc nhập tay.
+          </p>
+          <p *ngIf="emailCount === 0" class="text-amber-400 text-sm mt-2">
+            ⚠ Không tìm thấy email lương từ phieuluong.cpcit@gmail.com trong năm {{ year }}.
+          </p>
+        </div>
+
+        <!-- Manual override -->
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer w-fit">
+            <input type="checkbox" [(ngModel)]="customIncome" name="customIncome"
+              class="w-4 h-4 text-blue-600 bg-slate-700 rounded border-slate-600 focus:ring-blue-500">
+            <span class="text-sm text-slate-300">Nhập tay tổng thu nhập</span>
+          </label>
+          <div *ngIf="customIncome" class="mt-3">
+            <label class="label" for="manualIncome">Tổng thu nhập cả năm (VNĐ)</label>
+            <input id="manualIncome" type="number" [(ngModel)]="manualIncome" name="manualIncome"
+              class="input-field" placeholder="Ví dụ: 150000000" min="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Params card -->
+      <div class="card p-6 sm:p-8">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 bg-purple-600/15 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-white">Thông Số Giảm Trừ</h3>
+            <p class="text-xs text-slate-400">Giảm trừ gia cảnh: 132 triệu/năm · Người phụ thuộc: 52,8 triệu/người/năm</p>
+          </div>
+        </div>
+
+        <div class="form-group max-w-xs">
+          <label class="label" for="dependents">Số người phụ thuộc</label>
+          <div class="flex items-center gap-3">
+            <button type="button" (click)="decreaseDependents()"
+              class="w-10 h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xl font-bold transition-all flex items-center justify-center">
+              −
+            </button>
+            <input id="dependents" type="number" [(ngModel)]="dependents" name="dependents"
+              class="input-field text-center w-24 text-xl font-bold" min="0" max="20">
+            <button type="button" (click)="dependents = dependents + 1"
+              class="w-10 h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xl font-bold transition-all flex items-center justify-center">
+              +
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+          <button (click)="step = 'imap'" class="btn-secondary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Quay lại
+          </button>
+          <button (click)="calculateTax()" class="btn-primary flex-1 sm:flex-none">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            Tính Thuế TNCN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- STEP 3: RESULT / BÁO CÁO THUẾ                         -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div *ngIf="step === 'result' && taxResult" class="animate-fade-in space-y-6">
+
+      <!-- Top action bar -->
+      <div class="no-print flex flex-wrap items-center justify-between gap-3">
+        <button (click)="step = 'params'" class="btn-secondary text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Chỉnh sửa
+        </button>
+        <div class="flex gap-2">
+          <button (click)="printReport()" class="btn-secondary text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            In báo cáo
+          </button>
+          <button (click)="resetAll()" class="btn-secondary text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Tra cứu mới
+          </button>
+        </div>
+      </div>
+
+      <!-- ── SUMMARY STATS ── -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div class="stat-card col-span-2 sm:col-span-2 bg-gradient-to-br from-blue-600/20 to-blue-800/10 border-blue-500/30">
+          <p class="text-xs text-blue-400 font-medium uppercase tracking-wide">Tổng Thu Nhập</p>
+          <p class="text-xl sm:text-2xl font-bold text-white font-mono">{{ fmt(taxResult.totalIncome) }}</p>
+          <p class="text-xs text-slate-400">Năm {{ year }}</p>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-red-600/15 to-red-800/10 border-red-500/30">
+          <p class="text-xs text-red-400 font-medium uppercase tracking-wide">Tiền Thuế</p>
+          <p class="text-lg sm:text-xl font-bold text-white font-mono">{{ fmt(taxResult.totalTax) }}</p>
+          <p class="text-xs text-slate-400">{{ fmtP(taxResult.effectiveRate) }} hiệu dụng</p>
+        </div>
+        <div class="stat-card bg-gradient-to-br from-emerald-600/15 to-emerald-800/10 border-emerald-500/30">
+          <p class="text-xs text-emerald-400 font-medium uppercase tracking-wide">Thu Nhập Ròng</p>
+          <p class="text-lg sm:text-xl font-bold text-white font-mono">{{ fmt(taxResult.netIncome) }}</p>
+          <p class="text-xs text-slate-400">Sau thuế</p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════ -->
+      <!-- OFFICIAL TAX REPORT (mẫu cơ quan thuế)              -->
+      <!-- ══════════════════════════════════════════════════════ -->
+      <div class="card print-area overflow-hidden">
+        <!-- Report Header -->
+        <div class="bg-blue-700 px-6 sm:px-8 py-5 text-white">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam</p>
+              <p class="text-blue-100 text-xs mb-2">Độc lập — Tự do — Hạnh phúc</p>
+              <h2 class="text-lg sm:text-xl font-bold">TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN</h2>
+              <p class="text-blue-200 text-sm mt-0.5">Mẫu tham chiếu · Năm tính thuế: <span class="font-bold text-white">{{ year }}</span></p>
+            </div>
+            <div class="text-right text-xs text-blue-200 shrink-0">
+              <p>Mẫu: 02/QTT-TNCN</p>
+              <p class="mt-1">Ngày: {{ currentDate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 sm:px-8 py-6 space-y-6">
+
+          <!-- Section 1: Taxpayer info -->
+          <section>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
+              I. THÔNG TIN NGƯỜI NỘP THUẾ
+            </h3>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div class="bg-slate-700/30 rounded-xl px-4 py-3">
+                <p class="text-xs text-slate-400">Họ và tên (Email đăng nhập)</p>
+                <p class="font-medium text-white mt-0.5">{{ userEmail }}</p>
+              </div>
+              <div class="bg-slate-700/30 rounded-xl px-4 py-3">
+                <p class="text-xs text-slate-400">Năm tính thuế</p>
+                <p class="font-bold text-white mt-0.5">{{ year }}</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 2: Income -->
+          <section>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
+              II. THU NHẬP & GIẢM TRỪ
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-700">
+                    <th class="text-left py-2.5 text-slate-400 font-medium w-8">STT</th>
+                    <th class="text-left py-2.5 text-slate-400 font-medium">Nội dung</th>
+                    <th class="text-right py-2.5 text-slate-400 font-medium">Số tiền (VNĐ)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                  <tr class="hover:bg-slate-700/20 transition-colors">
+                    <td class="py-3 text-slate-500 text-xs pr-4">01</td>
+                    <td class="py-3 text-slate-200">[01] Tổng thu nhập chịu thuế trong năm</td>
+                    <td class="py-3 text-right font-mono text-white font-semibold">{{ fmtN(taxResult.totalIncome) }}</td>
+                  </tr>
+                  <tr class="hover:bg-slate-700/20 transition-colors">
+                    <td class="py-3 text-slate-500 text-xs pr-4">02</td>
+                    <td class="py-3 text-slate-200">[02] Giảm trừ gia cảnh bản thân (11 tr/tháng)</td>
+                    <td class="py-3 text-right font-mono text-slate-300">{{ fmtN(taxResult.personalDeduction) }}</td>
+                  </tr>
+                  <tr class="hover:bg-slate-700/20 transition-colors">
+                    <td class="py-3 text-slate-500 text-xs pr-4">03</td>
+                    <td class="py-3 text-slate-200">[03] Giảm trừ người phụ thuộc ({{ dependents }} người × 4,4 tr/tháng)</td>
+                    <td class="py-3 text-right font-mono text-slate-300">{{ fmtN(taxResult.dependentDeduction) }}</td>
+                  </tr>
+                  <tr class="bg-slate-700/20">
+                    <td class="py-3 text-slate-500 text-xs pr-4">04</td>
+                    <td class="py-3 text-slate-200 font-medium">[04] Tổng các khoản giảm trừ (02+03)</td>
+                    <td class="py-3 text-right font-mono text-amber-400 font-semibold">{{ fmtN(taxResult.totalDeduction) }}</td>
+                  </tr>
+                  <tr class="bg-blue-600/10 border-b-2 border-blue-500/30">
+                    <td class="py-3 text-slate-500 text-xs pr-4">05</td>
+                    <td class="py-3 text-blue-300 font-bold">[05] Thu nhập tính thuế (01 - 04)</td>
+                    <td class="py-3 text-right font-mono text-blue-300 font-bold text-base">{{ fmtN(taxResult.taxableIncome) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 3: Tax Breakdown by bracket -->
+          <section>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
+              III. TÍNH THUẾ THEO BIỂU THUẾ LŨY TIẾN TỪNG PHẦN
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-700">
+                    <th class="text-left py-2.5 text-slate-400 font-medium">Bậc thuế</th>
+                    <th class="text-right py-2.5 text-slate-400 font-medium">Thu nhập tính thuế bậc này</th>
+                    <th class="text-right py-2.5 text-slate-400 font-medium w-16">Thuế suất</th>
+                    <th class="text-right py-2.5 text-slate-400 font-medium">Thuế phải nộp</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/50">
+                  <tr *ngIf="taxResult.taxBreakdown.length === 0">
+                    <td colspan="4" class="py-4 text-center text-slate-500 text-sm">Thu nhập dưới mức giảm trừ · Không phải nộp thuế</td>
+                  </tr>
+                  <tr *ngFor="let b of taxResult.taxBreakdown; let i = index"
+                    class="hover:bg-slate-700/20 transition-colors">
+                    <td class="py-3 text-slate-300">{{ b.bracket }}</td>
+                    <td class="py-3 text-right font-mono text-slate-300">{{ fmtN(b.amount) }}</td>
+                    <td class="py-3 text-right">
+                      <span class="badge-warning text-xs py-0.5">{{ fmtP(b.rate) }}</span>
+                    </td>
+                    <td class="py-3 text-right font-mono text-red-300 font-medium">{{ fmtN(b.tax) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t-2 border-slate-600 bg-red-500/10">
+                    <td colspan="3" class="py-3.5 font-bold text-red-300">[06] TỔNG THUẾ THU NHẬP CÁ NHÂN PHẢI NỘP</td>
+                    <td class="py-3.5 text-right font-mono text-red-400 font-bold text-base">{{ fmtN(taxResult.totalTax) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- Section 4: Summary -->
+          <section>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-2">
+              IV. TỔNG HỢP KẾT QUẢ
+            </h3>
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div class="bg-slate-700/40 rounded-xl p-4 border border-slate-600/30">
+                <p class="text-xs text-slate-400 mb-1">Thuế TNCN trung bình/tháng</p>
+                <p class="text-lg font-bold text-white font-mono">{{ fmt(taxResult.monthlyTax) }}</p>
+              </div>
+              <div class="bg-slate-700/40 rounded-xl p-4 border border-slate-600/30">
+                <p class="text-xs text-slate-400 mb-1">Thuế suất hiệu dụng</p>
+                <p class="text-lg font-bold text-amber-400 font-mono">{{ fmtP(taxResult.effectiveRate) }}</p>
+              </div>
+              <div class="bg-emerald-600/10 rounded-xl p-4 border border-emerald-500/30">
+                <p class="text-xs text-emerald-400 mb-1">Thu nhập ròng sau thuế</p>
+                <p class="text-lg font-bold text-emerald-400 font-mono">{{ fmt(taxResult.netIncome) }}</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Save section -->
+          <section class="no-print">
+            <div *ngIf="saveSuccess" class="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl mb-3">
+              <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-emerald-400 text-sm">Báo cáo đã được lưu thành công!</p>
+            </div>
+            <div *ngIf="saveError" class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl mb-3">
+              <svg class="w-5 h-5 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-red-400 text-sm">{{ saveError }}</p>
+            </div>
+            <button *ngIf="!saveSuccess" (click)="saveReport()" [disabled]="saveLoading" class="btn-primary">
+              <svg *ngIf="saveLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <svg *ngIf="!saveLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+              </svg>
+              {{ saveLoading ? 'Đang lưu...' : 'Lưu Báo Cáo' }}
+            </button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
