@@ -180,17 +180,21 @@
             <p class="text-red-400 text-sm">{{ fetchError }}</p>
           </div>
 
-          <div class="flex gap-3 pt-2">
-            <button type="submit" [disabled]="fetchLoading" class="btn-primary flex-1 sm:flex-none">
+          <div class="flex flex-col sm:flex-row gap-3 pt-4">
+            <button type="submit" [disabled]="fetchLoading" class="btn-primary flex-1">
               <svg *ngIf="fetchLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
               </svg>
               <svg *ngIf="!fetchLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
               {{ fetchLoading ? 'Đang quét thư...' : 'Bắt đầu quét Email' }}
+            </button>
+
+            <button type="button" (click)="skipToManual()" [disabled]="fetchLoading" 
+              class="btn-secondary px-6 border-slate-700 hover:border-slate-500 text-slate-400 hover:text-white transition-all">
+              Bỏ qua & Nhập thủ công
             </button>
           </div>
         </form>

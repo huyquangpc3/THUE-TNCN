@@ -183,6 +183,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.manualIncome = 0;
   }
 
+  skipToManual() {
+    this.step = 'params';
+    this.totalIncome = 0;
+    this.customIncome = true;
+    this.fetchError = '';
+  }
+
   async signOut() {
     await this.supabase.signOut();
     this.router.navigate(['/dang-nhap']);
