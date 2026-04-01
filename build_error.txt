@@ -1,0 +1,7 @@
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mTS-998113: RouterLink is not used within the template of LoginComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/pages/login/login.component.ts:12:39:
+[37m      12 │   imports: [CommonModule, FormsModule, [32mRouterLink[37m],
+         ╵                                        [32m~~~~~~~~~~[0m
+
+[39m[22m
